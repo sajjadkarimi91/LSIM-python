@@ -4,9 +4,6 @@ import numpy as np
 import pandas as pd
 from sklearn import mixture
 
-import plotly.plotly as py
-import plotly.graph_objs as go
-import plotly
 
 
 class lsim_para:
@@ -775,19 +772,11 @@ class lsim():
 
     def plot_chmm_timeseries(self, obs, channel_number):
 
-        data = []
+        pd.options.plotting.backend = "plotly"
 
-        for d in range(1, 1 + self.parameters.channel_obs_dim[channel_number - 1]):
-            data_temp = go.Scatter(x=obs.columns[:], y=obs.loc[
-                (self.parameters.channels_name_unique[channel_number - 1], 'dim:' + "%03d" % (d,))].transpose())
-            # data_temp is a scatter object
-            data = data + [data_temp]
-
-        # data must be a list of scatter
-        # caution not a list of listed scatter
-
-        fig = dict(data=data)
-        plotly.offline.plot(fig, filename='time-series-channel-' + "%03d" % (channel_number,) + '.html')
+        df = pd.DataFrame( obs.loc[self.parameters.channels_name_unique[channel_number - 1]].values.transpose() ,
+                                 columns=self.parameters.dim_names_unique[0:self.parameters.channel_obs_dim[channel_number - 1]], dtype=float)
+        df.plot().show()
 
     def chmm_cart_prod(self):
         self.get_general_para()
