@@ -7,7 +7,7 @@ import pandas as pd
 C = 4
 channel_obs_dim = [4, 5, 2, 3]
 channel_state_num = [3, 4, 5, 3]
-num_gmm_component = [1, 2, 3, 2]
+num_gmm_component = [4, 1, 3, 2]
 
 C = 3
 channel_obs_dim = [4, 1, 3]

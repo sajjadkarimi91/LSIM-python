@@ -5,7 +5,6 @@ import pandas as pd
 from sklearn import mixture
 
 
-
 class lsim_para:
 
     # Initializer / Instance Attributes
@@ -17,9 +16,10 @@ class lsim_para:
         self.num_gmm_component = num_gmm_component_in
 
         self.channels_name_unique, self.states_name_unique, self.gmm_names_unique, self.dim_names_unique, self.states_of_channels, self.channel_names, self.channels_dim_name, self.dimension_of_channels, \
-        self.gmm_states_of_channels, self.gmm_of_channels , self.channels_states_gmm_joint_1, self.channels_states_gmm_joint_2, self.channels_states_gmm_joint_3= self.make_channels_title(C_in, channel_state_num_in,
-                                                                                     channel_obs_dim_in,
-                                                                                     num_gmm_component_in)
+        self.gmm_states_of_channels, self.gmm_of_channels, self.channels_states_gmm_joint_1, self.channels_states_gmm_joint_2, self.channels_states_gmm_joint_3 = self.make_channels_title(
+            C_in, channel_state_num_in,
+            channel_obs_dim_in,
+            num_gmm_component_in)
 
         self.dict_states2num = pd.DataFrame(list(range(1, 1 + len(self.states_name_unique))),
                                             index=self.states_name_unique)
@@ -32,7 +32,7 @@ class lsim_para:
         self.pi_0 = pd.DataFrame([], index=[self.channel_names, self.states_of_channels], columns=[0],
                                  dtype=float)
         self.pi_steady = pd.DataFrame([], index=[self.channel_names, self.states_of_channels], columns=[0],
-                                 dtype=float)
+                                      dtype=float)
         self.transition_matrices = pd.DataFrame([], index=[self.channel_names, self.states_of_channels],
                                                 columns=[self.channel_names, self.states_of_channels],
                                                 dtype=float)
@@ -50,7 +50,6 @@ class lsim_para:
             temp = temp / np.sum(temp)
             self.pi_0.loc[self.channels_name_unique[c], 0] = temp.copy()
             self.pi_steady.loc[self.channels_name_unique[c], 0] = temp.copy()
-
 
         # init transition matrix
         for zee in range(C_in):
@@ -105,7 +104,6 @@ class lsim_para:
         channels_states_gmm_joint_2 = []
         channels_states_gmm_joint_3 = []
 
-
         for s in range(1, np.max(channel_state_num_in) + 1):
             states_name_unique_res.append('state:' + "%03d" % (s,))
 
@@ -140,7 +138,7 @@ class lsim_para:
                 gmm_of_channels_res.append('gmm:' + "%03d" % (g,))
 
         return channels_name_unique_res, states_name_unique_res, gmm_names_unique_res, dim_names_unique_res, states_of_channels_res, channels_state_name_res, channels_dim_name_res, dimension_of_channels_res, \
-               gmm_states_of_channels_res, gmm_of_channels_res, channels_states_gmm_joint_1,channels_states_gmm_joint_2,channels_states_gmm_joint_3
+               gmm_states_of_channels_res, gmm_of_channels_res, channels_states_gmm_joint_1, channels_states_gmm_joint_2, channels_states_gmm_joint_3
 
 
 class general_para(lsim_para):
@@ -259,8 +257,6 @@ class lsim():
 
     def generate_time_series(self, from_lsim, T):
 
-
-
         if from_lsim:
             self.general_chmm_para = general_para(self.parameters, from_lsim)
         else:
@@ -269,18 +265,17 @@ class lsim():
 
         channels_observation = pd.DataFrame([], index=[self.parameters.channels_dim_name,
                                                        self.parameters.dimension_of_channels],
-                                            columns= np.arange(T), dtype=float)
+                                            columns=np.arange(T), dtype=float)
         channels_hidden_states = pd.DataFrame([], index=self.parameters.channels_name_unique,
-                                              columns= np.arange(T))
+                                              columns=np.arange(T))
 
         for c in range(self.parameters.C):
             pi_0 = self.general_chmm_para.pi_0.loc[self.parameters.channels_name_unique[c]]
             temp = self._select_P(pi_0)
             # print(temp)
             channels_hidden_states.loc[self.parameters.channels_name_unique[c], 0] = temp.loc[0]
-            channels_observation.loc[self.parameters.channels_name_unique[c], 0] = self._gmm_gen(temp,
-                                                                                                 self.parameters.channels_name_unique[
-                                                                                                     c]).values
+            channels_observation.loc[self.parameters.channels_name_unique[c], 0] \
+                = self._gmm_gen(temp.loc[0],self.parameters.channels_name_unique[c])
 
         dict_states2num = self.parameters.dict_states2num
 
@@ -292,9 +287,7 @@ class lsim():
                     tuple(current_states.values), self.parameters.channels_name_unique[c]].values[0]
                 temp = self._select_P(current_pi)
                 channels_hidden_states.loc[self.parameters.channels_name_unique[c], t] = temp.loc[0]
-                channels_observation.loc[self.parameters.channels_name_unique[c], t] = self._gmm_gen(temp,
-                                                                                                     self.parameters.channels_name_unique[
-                                                                                                         c]).values
+                channels_observation.loc[self.parameters.channels_name_unique[c], t] = self._gmm_gen(temp.loc[0],self.parameters.channels_name_unique[c])
 
         return channels_observation, channels_hidden_states
 
@@ -394,16 +387,16 @@ class lsim():
 
         return log_joint_prob
 
-    def forward_backward_lsim(self, obs, flag_EM = False):
+    def forward_backward_lsim(self, obs, flag_EM=False):
 
         T = obs.shape[1]
         C = self.parameters.C
         lsim_para = self.parameters
         max_gmm_num = np.max(self.parameters.num_gmm_component)
         transition_matrices = np.array(lsim_para.transition_matrices)
-        state_numbers_index = np.concatenate([[-1], np.cumsum(lsim_para.channel_state_num)-1])
+        state_numbers_index = np.concatenate([[-1], np.cumsum(lsim_para.channel_state_num) - 1])
 
-        sum_states = state_numbers_index[-1]+1
+        sum_states = state_numbers_index[-1] + 1
         P_ot_c_cond_past = np.zeros([C, T])
         b_c_ot_nc = np.zeros([sum_states, T])
 
@@ -430,177 +423,181 @@ class lsim():
         vec_index_y = []
 
         for zee in range(C):
-            zee_index = np.arange(state_numbers_index[zee]+1,state_numbers_index[zee+1]+1)
-            vec_index_x.extend( np.repeat(int(zee),lsim_para.channel_state_num[zee], axis=0) )
-            vec_index_y.extend( np.arange(state_numbers_index[zee]+1, state_numbers_index[zee + 1]+1))
+            zee_index = np.arange(state_numbers_index[zee] + 1, state_numbers_index[zee + 1] + 1)
+            vec_index_x.extend(np.repeat(int(zee), lsim_para.channel_state_num[zee], axis=0))
+            vec_index_y.extend(np.arange(state_numbers_index[zee] + 1, state_numbers_index[zee + 1] + 1))
 
-            zee_coupling = lsim_para.coupling_theta_IM[:,zee]
-            cuopling_repmat[zee_index,: ] = np.repeat(zee_coupling[:, np.newaxis], lsim_para.channel_state_num[zee], axis=1).transpose()
+            zee_coupling = lsim_para.coupling_theta_IM[:, zee]
+            cuopling_repmat[zee_index, :] = np.repeat(zee_coupling[:, np.newaxis], lsim_para.channel_state_num[zee],
+                                                      axis=1).transpose()
 
-            diag_zero[zee_index[0]:zee_index[-1]+1, zee_index[0]:zee_index[-1]+1] = 0
+            diag_zero[zee_index[0]:zee_index[-1] + 1, zee_index[0]:zee_index[-1] + 1] = 0
 
             zee_coupling = lsim_para.coupling_theta_IM[zee, :]
-            cuopling_repmat_beta[zee_index,: ] = np.repeat(zee_coupling[:, np.newaxis], lsim_para.channel_state_num[zee], axis=1).transpose()
-            weights_subsystems_opt[zee_index,: ] = np.repeat(zee_coupling[:, np.newaxis], lsim_para.channel_state_num[zee], axis=1).transpose()
+            cuopling_repmat_beta[zee_index, :] = np.repeat(zee_coupling[:, np.newaxis],
+                                                           lsim_para.channel_state_num[zee], axis=1).transpose()
+            weights_subsystems_opt[zee_index, :] = np.repeat(zee_coupling[:, np.newaxis],
+                                                             lsim_para.channel_state_num[zee], axis=1).transpose()
 
         for zee in range(C):
             zee_index = np.arange(state_numbers_index[zee] + 1, state_numbers_index[zee + 1] + 1)
-            coupling_transmat[:, zee_index] = np.multiply(cuopling_repmat_beta[:,zee][:, np.newaxis], transition_matrices[:,zee_index])
+            coupling_transmat[:, zee_index] = np.multiply(cuopling_repmat_beta[:, zee][:, np.newaxis],
+                                                          transition_matrices[:, zee_index])
 
-
-
-        vec_mat_mult = (vec_index_y,vec_index_x)
+        vec_mat_mult = (vec_index_y, vec_index_x)
         mat_mult_one[vec_mat_mult] = 1
 
-        t=0
-        alpha[:,t] = lsim_para.pi_0[:].values[:,0]
-        P_ot_c_cond_past[:, t] = np.dot( mat_mult_one.transpose(), np.multiply(alpha[:,t], P_observ_cond_to_state[:,t]) )
-        b_c_ot_nc[:, t] = np.divide( P_observ_cond_to_state[:,t], np.dot(mat_mult_one , P_ot_c_cond_past[:,t]))
+        t = 0
+        alpha[:, t] = lsim_para.pi_0[:].values[:, 0]
+        P_ot_c_cond_past[:, t] = np.dot(mat_mult_one.transpose(),
+                                        np.multiply(alpha[:, t], P_observ_cond_to_state[:, t]))
+        b_c_ot_nc[:, t] = np.divide(P_observ_cond_to_state[:, t], np.dot(mat_mult_one, P_ot_c_cond_past[:, t]))
 
-        for t in range(1,T):
+        for t in range(1, T):
 
-            alpha_tm1_tm1 = np.multiply(alpha[:, t-1], b_c_ot_nc[:, t-1])
+            alpha_tm1_tm1 = np.multiply(alpha[:, t - 1], b_c_ot_nc[:, t - 1])
             mat_mult[vec_mat_mult] = alpha_tm1_tm1
 
-            a_alpha_b[:,:, t-1]= np.dot( transition_matrices.transpose(), mat_mult)
-            a_alpha_b_coupled = np.multiply(a_alpha_b[:,:, t-1],cuopling_repmat)
+            a_alpha_b[:, :, t - 1] = np.dot(transition_matrices.transpose(), mat_mult)
+            a_alpha_b_coupled = np.multiply(a_alpha_b[:, :, t - 1], cuopling_repmat)
             alpha[:, t] = np.sum(a_alpha_b_coupled, axis=1)
 
-            if np.abs( np.sum(alpha[:, t])-C)>0.0001: # fordebug
-                yu=0
+            if np.abs(np.sum(alpha[:, t]) - C) > 0.0001:  # fordebug
+                yu = 0
 
-
-            P_ot_c_cond_past[:, t] = np.dot(mat_mult_one.transpose(), np.multiply(alpha[:, t], P_observ_cond_to_state[:, t]))
+            P_ot_c_cond_past[:, t] = np.dot(mat_mult_one.transpose(),
+                                            np.multiply(alpha[:, t], P_observ_cond_to_state[:, t]))
             b_c_ot_nc[:, t] = np.divide(P_observ_cond_to_state[:, t], np.dot(mat_mult_one, P_ot_c_cond_past[:, t]))
 
-            P_vz_tm1_vw_t_O_cond[:,:, t] =  coupling_transmat + np.dot( np.multiply(alpha_tm1_tm1, diag_zero), coupling_transmat )
-            P_vz_tm1_vw_t_O[:,:, t]  = np.multiply(alpha_tm1_tm1, P_vz_tm1_vw_t_O_cond[:,:, t])
-
+            P_vz_tm1_vw_t_O_cond[:, :, t] = coupling_transmat + np.dot(np.multiply(alpha_tm1_tm1, diag_zero),
+                                                                       coupling_transmat)
+            P_vz_tm1_vw_t_O[:, :, t] = np.multiply(alpha_tm1_tm1, P_vz_tm1_vw_t_O_cond[:, :, t])
 
         beta[:, -1] = b_c_ot_nc[:, -1]
-        alpha_T[:, -1] =  np.multiply(alpha[:, -1],beta[:, -1])
+        alpha_T[:, -1] = np.multiply(alpha[:, -1], beta[:, -1])
 
         flag_nan = np.sum(np.sum(lsim_para.coupling_theta_IM, axis=1) < 0.0000000001) > 0;
-        channel_numbers_index = np.concatenate([[-1], np.arange(C,C*C+1,C)-1])
+        channel_numbers_index = np.concatenate([[-1], np.arange(C, C * C + 1, C) - 1])
 
-        for t in range(T-2, -1, -1):
+        for t in range(T - 2, -1, -1):
 
-            mat_mult[vec_mat_mult] = beta[:, t+1]
+            mat_mult[vec_mat_mult] = beta[:, t + 1]
             # beta_C2 = transitions_matrices * mat_mult;# compute from t=1 to t = T - 1
 
-            beta_C = np.dot(P_vz_tm1_vw_t_O_cond[:,:, t+1],mat_mult)
+            beta_C = np.dot(P_vz_tm1_vw_t_O_cond[:, :, t + 1], mat_mult)
 
-            if C >1:
-                temp = P_vz_tm1_vw_t_O[:,:, t+1]
-                temp_2d_f = np.divide(np.power(temp, 2), alpha[:,t+1])
-                temp_aplha = np.multiply(alpha[:,t],b_c_ot_nc[:,t])
-
+            if C > 1:
+                temp = P_vz_tm1_vw_t_O[:, :, t + 1]
+                temp_2d_f = np.divide(np.power(temp, 2), alpha[:, t + 1])
+                temp_aplha = np.multiply(alpha[:, t], b_c_ot_nc[:, t])
 
                 h_zee_temp = np.cumsum(np.power(temp_aplha, 2))
-                #h_zee_all = h_zee_temp[state_numbers_index[1:]] - np.concatenate([[0], h_zee_temp[state_numbers_index[1:C]]])
-                h_zee_all = h_zee_temp[state_numbers_index[1:]] # instead of concatenation
-                h_zee_all[1:] = h_zee_all[1:] - h_zee_temp[state_numbers_index[1:C]]# instead of concatenation
-                h_zee_all = np.repeat(h_zee_all,C)
+                # h_zee_all = h_zee_temp[state_numbers_index[1:]] - np.concatenate([[0], h_zee_temp[state_numbers_index[1:C]]])
+                h_zee_all = h_zee_temp[state_numbers_index[1:]]  # instead of concatenation
+                h_zee_all[1:] = h_zee_all[1:] - h_zee_temp[state_numbers_index[1:C]]  # instead of concatenation
+                h_zee_all = np.repeat(h_zee_all, C)
 
-                f_zee_temp1 = np.cumsum(temp_2d_f,axis=0)
-                f_zee_temp = f_zee_temp1[state_numbers_index[1:],:] # instead of concatenation
-                f_zee_temp[1:,:] = f_zee_temp[1:,:] - f_zee_temp1[state_numbers_index[1:C],:] # instead of concatenation
+                f_zee_temp1 = np.cumsum(temp_2d_f, axis=0)
+                f_zee_temp = f_zee_temp1[state_numbers_index[1:], :]  # instead of concatenation
+                f_zee_temp[1:, :] = f_zee_temp[1:, :] - f_zee_temp1[state_numbers_index[1:C],
+                                                        :]  # instead of concatenation
                 f_zee_temp = np.cumsum(f_zee_temp, axis=1)
-                f_zee_all = f_zee_temp[:,state_numbers_index[1:]]
-                f_zee_all[:,1:] = f_zee_all[:,1:] - f_zee_temp[:,state_numbers_index[1:C]]
+                f_zee_all = f_zee_temp[:, state_numbers_index[1:]]
+                f_zee_all[:, 1:] = f_zee_all[:, 1:] - f_zee_temp[:, state_numbers_index[1:C]]
                 f_zee_all = f_zee_all.flatten('F') + 0.000001
 
-                nume_temp1 = np.cumsum( np.divide(f_zee_all, (f_zee_all - h_zee_all)),axis=0)
-                nume_temp = nume_temp1[channel_numbers_index[1:]] # instead of concatenation
-                nume_temp[1:] = nume_temp[1:] - nume_temp1[channel_numbers_index[1:C]] # instead of concatenation
-                nume_temp = np.multiply(np.repeat(nume_temp, C),h_zee_all)
+                nume_temp1 = np.cumsum(np.divide(f_zee_all, (f_zee_all - h_zee_all)), axis=0)
+                nume_temp = nume_temp1[channel_numbers_index[1:]]  # instead of concatenation
+                nume_temp[1:] = nume_temp[1:] - nume_temp1[channel_numbers_index[1:C]]  # instead of concatenation
+                nume_temp = np.multiply(np.repeat(nume_temp, C), h_zee_all)
 
-                denume_temp2 = np.cumsum( np.divide(1, (f_zee_all - h_zee_all)),axis=0)
-                denume_temp = denume_temp2[channel_numbers_index[1:]] # instead of concatenation
-                denume_temp[1:] = denume_temp[1:] - denume_temp2[channel_numbers_index[1:C]] # instead of concatenation
-                denume_temp = 1+ np.multiply(np.repeat(denume_temp, C),h_zee_all)
+                denume_temp2 = np.cumsum(np.divide(1, (f_zee_all - h_zee_all)), axis=0)
+                denume_temp = denume_temp2[channel_numbers_index[1:]]  # instead of concatenation
+                denume_temp[1:] = denume_temp[1:] - denume_temp2[channel_numbers_index[1:C]]  # instead of concatenation
+                denume_temp = 1 + np.multiply(np.repeat(denume_temp, C), h_zee_all)
 
-                g_zee_all = np.divide( nume_temp, denume_temp)
-                d_hat = np.divide( (f_zee_all - g_zee_all), (f_zee_all - h_zee_all))
+                g_zee_all = np.divide(nume_temp, denume_temp)
+                d_hat = np.divide((f_zee_all - g_zee_all), (f_zee_all - h_zee_all))
 
-                temp_delta = np.reshape(d_hat,(C,C))
+                temp_delta = np.reshape(d_hat, (C, C))
                 mat_mult[vec_mat_mult] = 1
-                weights_subsystems = np.dot(mat_mult ,temp_delta)
+                weights_subsystems = np.dot(mat_mult, temp_delta)
 
             else:
                 mat_mult[vec_mat_mult] = 1
                 weights_subsystems = mat_mult
 
             temp_sum = np.sum(np.multiply(weights_subsystems, beta_C), axis=1)
-            temp_sum[temp_sum<0.0000001] = 0.0000001
-            beta[:,t] = np.multiply(b_c_ot_nc[:,t], temp_sum)
+            temp_sum[temp_sum < 0.0000001] = 0.0000001
+            beta[:, t] = np.multiply(b_c_ot_nc[:, t], temp_sum)
 
             if flag_nan:
-                ind_nan = np.isnan(beta[:,t])
-                beta[ind_nan, t] = b_c_ot_nc[ind_nan,t]
+                ind_nan = np.isnan(beta[:, t])
+                beta[ind_nan, t] = b_c_ot_nc[ind_nan, t]
 
-            alpha_T[:, t] = np.multiply(beta[:,t], alpha[:,t])
+            alpha_T[:, t] = np.multiply(beta[:, t], alpha[:, t])
 
             temp_sum = np.cumsum(alpha_T[:, t])
-            normalizer = temp_sum[state_numbers_index[1:]] # instead of concatenation
+            normalizer = temp_sum[state_numbers_index[1:]]  # instead of concatenation
             normalizer[1:] = normalizer[1:] - temp_sum[state_numbers_index[1:C]]  # instead of concatenation
             normalizer_vec = np.dot(mat_mult_one, normalizer)
 
-            alpha_T[:, t] = np.divide(alpha_T[:, t] ,normalizer_vec)
+            alpha_T[:, t] = np.divide(alpha_T[:, t], normalizer_vec)
             beta[:, t] = np.divide(beta[:, t], normalizer_vec)
 
         P_O_model = np.sum(np.log(P_ot_c_cond_past.flatten()))
 
-        #return P_O_model ,alpha_out , beta_out , alpha_T_out , b_c_ot_nc_out , P_observ_cond_to_state_out , P_observ_cond_to_state_comp_out
+        # return P_O_model ,alpha_out , beta_out , alpha_T_out , b_c_ot_nc_out , P_observ_cond_to_state_out , P_observ_cond_to_state_comp_out
         if flag_EM:
             return P_O_model, alpha, beta, alpha_T, b_c_ot_nc, P_observ_cond_to_state, P_observ_cond_to_state_comp
         else:
-            alpha_out =  pd.DataFrame(alpha, index=[lsim_para.channel_names, lsim_para.states_of_channels],
-                                      columns=[np.arange(T)], dtype=float)
-            beta_out =  pd.DataFrame(beta, index=[lsim_para.channel_names, lsim_para.states_of_channels],
-                                      columns=[np.arange(T)], dtype=float)
-            alpha_T_out =  pd.DataFrame(alpha_T, index=[lsim_para.channel_names, lsim_para.states_of_channels],
-                                      columns=[np.arange(T)], dtype=float)
-            b_c_ot_nc_out =  pd.DataFrame(b_c_ot_nc, index=[lsim_para.channel_names, lsim_para.states_of_channels],
-                                      columns=[np.arange(T)], dtype=float)
-            P_observ_cond_to_state_out =  pd.DataFrame(P_observ_cond_to_state, index=[lsim_para.channel_names, lsim_para.states_of_channels],
-                                      columns=[np.arange(T)], dtype=float)
+            alpha_out = pd.DataFrame(alpha, index=[lsim_para.channel_names, lsim_para.states_of_channels],
+                                     columns=[np.arange(T)], dtype=float)
+            beta_out = pd.DataFrame(beta, index=[lsim_para.channel_names, lsim_para.states_of_channels],
+                                    columns=[np.arange(T)], dtype=float)
+            alpha_T_out = pd.DataFrame(alpha_T, index=[lsim_para.channel_names, lsim_para.states_of_channels],
+                                       columns=[np.arange(T)], dtype=float)
+            b_c_ot_nc_out = pd.DataFrame(b_c_ot_nc, index=[lsim_para.channel_names, lsim_para.states_of_channels],
+                                         columns=[np.arange(T)], dtype=float)
+            P_observ_cond_to_state_out = pd.DataFrame(P_observ_cond_to_state,
+                                                      index=[lsim_para.channel_names, lsim_para.states_of_channels],
+                                                      columns=[np.arange(T)], dtype=float)
 
-            P_observ_cond_to_state_comp_out =  pd.DataFrame(P_observ_cond_to_state_comp.reshape((sum_states*max_gmm_num,T)),
-                                                            index=[lsim_para.channels_states_gmm_joint_1,lsim_para.channels_states_gmm_joint_2, lsim_para.channels_states_gmm_joint_3],
-                                                            columns=[np.arange(T)], dtype=float)
+            P_observ_cond_to_state_comp_out = pd.DataFrame(
+                P_observ_cond_to_state_comp.reshape((sum_states * max_gmm_num, T)),
+                index=[lsim_para.channels_states_gmm_joint_1, lsim_para.channels_states_gmm_joint_2,
+                       lsim_para.channels_states_gmm_joint_3],
+                columns=[np.arange(T)], dtype=float)
 
             return P_O_model, alpha_out, beta_out, alpha_T_out, b_c_ot_nc_out, P_observ_cond_to_state_out, P_observ_cond_to_state_comp_out
 
     def em_lsim(self, obs, max_itration, extra_options):
 
         try:
-            if len(obs.columns.levels)!=2:
+            if len(obs.columns.levels) != 2:
                 obs.columns = pd.MultiIndex.from_product([['obs:0001'], np.arange(obs.columns.shape[0])])
         except:
-            obs.columns = pd.MultiIndex.from_product([['obs:0001'],np.arange(obs.columns.shape[0])])
+            obs.columns = pd.MultiIndex.from_product([['obs:0001'], np.arange(obs.columns.shape[0])])
 
         num_trials = len(obs.columns.levels[0])
         name_of_trails = obs.columns.levels[0]
-        length_observation = np.ones(len(name_of_trails),dtype=int)
+        length_observation = np.ones(len(name_of_trails), dtype=int)
         for tr in range(num_trials):
-            length_observation[tr] = np.int(obs.loc[:,name_of_trails[tr]].shape[1])
-
+            length_observation[tr] = np.int(obs.loc[:, name_of_trails[tr]].shape[1])
 
         all_observation = np.array(obs, dtype=np.float)
         T_all = np.int(np.sum(length_observation))
         C = self.parameters.C
         lsim_para = self.parameters
 
-
         max_state_num = np.max(lsim_para.channel_state_num)
         max_gmm_num = np.max(lsim_para.num_gmm_component)
         dimension_numbers_reshape = np.concatenate([[0], np.cumsum(lsim_para.channel_obs_dim)])
         dimension_numbers_index = np.concatenate([[-1], np.cumsum(lsim_para.channel_obs_dim) - 1])
-        state_numbers_index = np.concatenate([[-1], np.cumsum(lsim_para.channel_state_num)-1])
-        trial_time_index = np.concatenate([[-1], np.cumsum(length_observation)-1])
+        state_numbers_index = np.concatenate([[-1], np.cumsum(lsim_para.channel_state_num) - 1])
+        trial_time_index = np.concatenate([[-1], np.cumsum(length_observation) - 1])
         state_names = self.parameters.states_name_unique.copy()
-        sum_states = state_numbers_index[-1]+1
+        sum_states = state_numbers_index[-1] + 1
         ch_names = lsim_para.channels_name_unique
         state_names = lsim_para.states_name_unique
         gmm_names = lsim_para.gmm_names_unique
@@ -611,7 +608,7 @@ class lsim():
         # GMM initialization
         for zee in range(C):
 
-            Y = obs.loc[ch_names[zee],:]
+            Y = obs.loc[ch_names[zee], :]
             Y = np.array(Y)
 
             # fit a Gaussian Mixture Model with N components
@@ -626,16 +623,16 @@ class lsim():
             for i in range(lsim_para.channel_state_num[zee]):
 
                 temp_mu_gmm = temp_mu[0, :]
-                lsim_para.gmm_para_mu.loc[ch_names[zee],(state_names[i],gmm_names[0])] = temp_mu[0, :]
+                lsim_para.gmm_para_mu.loc[ch_names[zee], (state_names[i], gmm_names[0])] = temp_mu[0, :]
                 lsim_para.gmm_para_sigma.loc[ch_names[zee], (state_names[i], gmm_names[0])] = temp_sigma[0, :]
                 lsim_para.gmm_para_P.loc[ch_names[zee], (state_names[i], gmm_names[0])] = P[0]
 
-                temp_mu = np.delete(temp_mu,0,0)
+                temp_mu = np.delete(temp_mu, 0, 0)
                 temp_sigma = np.delete(temp_sigma, 0, 0)
                 P = np.delete(P, 0, 0)
 
-                for k in range(1,lsim_para.num_gmm_component[zee]):
-                    temp_distance = np.sum(np.power(np.abs(temp_mu_gmm - temp_mu),2),axis=1)
+                for k in range(1, lsim_para.num_gmm_component[zee]):
+                    temp_distance = np.sum(np.power(np.abs(temp_mu_gmm - temp_mu), 2), axis=1)
                     ind_min = np.argmin(temp_distance)
                     lsim_para.gmm_para_mu.loc[ch_names[zee], (state_names[i], gmm_names[k])] = temp_mu[ind_min, :]
                     lsim_para.gmm_para_sigma.loc[ch_names[zee], (state_names[i], gmm_names[k])] = temp_sigma[ind_min, :]
@@ -645,11 +642,14 @@ class lsim():
                     temp_sigma = np.delete(temp_sigma, ind_min, 0)
                     P = np.delete(P, ind_min, 0)
 
-                lsim_para.gmm_para_P.loc[ch_names[zee], state_names[i]] = lsim_para.gmm_para_P.loc[ch_names[zee], state_names[i]].values/ np.nansum(lsim_para.gmm_para_P.loc[ch_names[zee], state_names[i]].values)
-                lsim_para.pi_0.loc[ch_names[zee]] = 1/lsim_para.channel_state_num[zee]
-                lsim_para.transition_matrices.loc[:,ch_names[zee]] = 1/lsim_para.channel_state_num[zee]
+                lsim_para.gmm_para_P.loc[ch_names[zee], state_names[i]] = lsim_para.gmm_para_P.loc[
+                                                                              ch_names[zee], state_names[
+                                                                                  i]].values / np.nansum(
+                lsim_para.gmm_para_P.loc[ch_names[zee], state_names[i]].values)
+                lsim_para.pi_0.loc[ch_names[zee]] = 1 / lsim_para.channel_state_num[zee]
+                lsim_para.transition_matrices.loc[:, ch_names[zee]] = 1 / lsim_para.channel_state_num[zee]
 
-        lsim_para.coupling_theta_IM = np.ones((C,C))/C
+        lsim_para.coupling_theta_IM = np.ones((C, C)) / C
 
         alpha_T_trials = np.zeros((sum_states, T_all))
         alpha_trials = np.zeros((sum_states, T_all))
@@ -659,7 +659,7 @@ class lsim():
         P_observ_cond_to_state_trials = np.zeros((sum_states, T_all))
         P_observ_cond_to_state_comp_trials = np.zeros((sum_states, max_gmm_num, T_all))
 
-        gamma_trail_time_index = 1+ trial_time_index[0:-1]
+        gamma_trail_time_index = 1 + trial_time_index[0:-1]
         L_T_1 = T_all - num_trials
         P_O_model = np.zeros((num_trials))
 
@@ -679,71 +679,85 @@ class lsim():
         for itr in range(max_itration):
 
             for zee in range(C):
-                zee_index = np.arange(state_numbers_index[zee]+1,state_numbers_index[zee+1]+1)
-                coupling_transition_all[:,zee_index] = np.multiply(lsim_para.transition_matrices.loc[:,ch_names[zee]] ,np.dot(mat_mult_one,lsim_para.coupling_theta_IM[:,zee])[:, np.newaxis])
+                zee_index = np.arange(state_numbers_index[zee] + 1, state_numbers_index[zee + 1] + 1)
+                coupling_transition_all[:, zee_index] = np.multiply(lsim_para.transition_matrices.loc[:, ch_names[zee]],
+                                                                    np.dot(mat_mult_one,
+                                                                           lsim_para.coupling_theta_IM[:, zee])[:,
+                                                                    np.newaxis])
 
             sum3_zeta = 0
 
-            for tr in np.arange(num_trials,dtype=int):
-                P_O_model[tr], alpha_trials[:,trial_time_index[tr]+1:trial_time_index[tr+1]+1], beta_trials[:,trial_time_index[tr]+1:trial_time_index[tr+1]+1], alpha_T_trials[:,trial_time_index[tr]+1:trial_time_index[tr+1]+1], b_c_ot_nc_trials[:,trial_time_index[tr]+1:trial_time_index[tr+1]+1], P_observ_cond_to_state_trials[:,trial_time_index[tr]+1:trial_time_index[tr+1]+1], P_observ_cond_to_state_comp_trials[:,:,trial_time_index[tr]+1:trial_time_index[tr+1]+1]  = self.forward_backward_lsim(obs.loc[:,name_of_trails[tr]], flag_EM)
-                zeta_part1 = np.repeat( np.multiply(alpha_trials[:,trial_time_index[tr]+1:trial_time_index[tr+1]],b_c_ot_nc_trials[:,trial_time_index[tr]+1:trial_time_index[tr+1]])[:,np.newaxis,:], state_numbers_index[-1]+1,axis=1)
-                zeta_part2 = np.repeat(beta_trials[:,trial_time_index[tr]+2:trial_time_index[tr+1]+1][np.newaxis,:,:], state_numbers_index[-1]+1,axis=0)
-                sum3_zeta += np.sum( np.multiply(zeta_part1,zeta_part2), axis=2)
+            for tr in np.arange(num_trials, dtype=int):
+                P_O_model[tr], alpha_trials[:, trial_time_index[tr] + 1:trial_time_index[tr + 1] + 1], beta_trials[:,trial_time_index[tr] + 1: trial_time_index[ tr + 1] + 1], \
+                alpha_T_trials[:,trial_time_index[tr] + 1: trial_time_index[tr + 1] + 1], b_c_ot_nc_trials[ :, trial_time_index[tr] + 1:trial_time_index[tr + 1] + 1], \
+                P_observ_cond_to_state_trials[:, trial_time_index[tr] + 1:trial_time_index[tr + 1] + 1], P_observ_cond_to_state_comp_trials[:, :, trial_time_index[ tr] + 1:trial_time_index[ tr + 1] + 1] \
+                    = self.forward_backward_lsim(obs.loc[:, name_of_trails[tr]], flag_EM)
 
-            sum3_zeta = np.multiply(sum3_zeta,coupling_transition_all)
+                zeta_part1 = np.repeat(np.multiply(alpha_trials[:, trial_time_index[tr] + 1:trial_time_index[tr + 1]],
+                                                   b_c_ot_nc_trials[:,
+                                                   trial_time_index[tr] + 1:trial_time_index[tr + 1]])[:, np.newaxis,
+                                       :], state_numbers_index[-1] + 1, axis=1)
+                zeta_part2 = np.repeat(
+                    beta_trials[:, trial_time_index[tr] + 2:trial_time_index[tr + 1] + 1][np.newaxis, :, :],
+                    state_numbers_index[-1] + 1, axis=0)
+                sum3_zeta += np.sum(np.multiply(zeta_part1, zeta_part2), axis=2)
 
-            gamma_P0 = alpha_T_trials[:,gamma_trail_time_index]
-            lsim_para.pi_0.loc[:] = np.mean(gamma_P0,axis=1)[:,np.newaxis]
-            temp_coupling = np.zeros(sum_states+1)
+            sum3_zeta = np.multiply(sum3_zeta, coupling_transition_all)
+
+            gamma_P0 = alpha_T_trials[:, gamma_trail_time_index]
+            lsim_para.pi_0.loc[:] = np.mean(gamma_P0, axis=1)[:, np.newaxis]
+            temp_coupling = np.zeros(sum_states + 1)
 
             for zee in range(C):
                 zee_index = np.arange(state_numbers_index[zee] + 1, state_numbers_index[zee + 1] + 1)
 
-                sum3_Zeta_zee = sum3_zeta[:,zee_index]
-                sum32_Zeta_zee = np.sum(sum3_Zeta_zee,axis=1)
-                temp_Trans_zee = np.divide(sum3_Zeta_zee, sum32_Zeta_zee[:,np.newaxis])
-                temp_Trans_zee[np.isnan(temp_Trans_zee)] = 1/lsim_para.channel_state_num[zee]
-                lsim_para.transition_matrices.loc[:,ch_names[zee]] = temp_Trans_zee
+                sum3_Zeta_zee = sum3_zeta[:, zee_index]
+                sum32_Zeta_zee = np.sum(sum3_Zeta_zee, axis=1)
+                temp_Trans_zee = np.divide(sum3_Zeta_zee, sum32_Zeta_zee[:, np.newaxis])
+                temp_Trans_zee[np.isnan(temp_Trans_zee)] = 1 / lsim_para.channel_state_num[zee]
+                lsim_para.transition_matrices.loc[:, ch_names[zee]] = temp_Trans_zee
 
                 temp_coupling[1:] = np.cumsum(sum32_Zeta_zee)
-                lsim_para.coupling_theta_IM[:,zee] = (temp_coupling[state_numbers_index[1:]+1] - temp_coupling[state_numbers_index[:-1]+1])/L_T_1
+                lsim_para.coupling_theta_IM[:, zee] = (temp_coupling[state_numbers_index[1:] + 1] - temp_coupling[
+                    state_numbers_index[:-1] + 1]) / L_T_1
 
                 for st in range(lsim_para.channel_state_num[zee]):
-                    temp_gamma_obs = np.zeros((lsim_para.num_gmm_component[zee],T_all))
+                    temp_gamma_obs = np.zeros((lsim_para.num_gmm_component[zee], T_all))
 
                     for k in range(lsim_para.num_gmm_component[zee]):
-                        temp_gamma_obs[k,:] = np.divide( np.multiply(alpha_T_trials[zee_index[st],:], P_observ_cond_to_state_comp_trials[zee_index[st],k,:]), P_observ_cond_to_state_trials[zee_index[st],:])
-                        temp_gamma_obs[k, np.isnan(temp_gamma_obs[k,:])] = 0
+                        temp_gamma_obs[k, :] = np.divide(np.multiply(alpha_T_trials[zee_index[st], :],
+                                                                     P_observ_cond_to_state_comp_trials[zee_index[st],
+                                                                     k, :]),
+                                                         P_observ_cond_to_state_trials[zee_index[st], :])
+                        temp_gamma_obs[k, np.isnan(temp_gamma_obs[k, :])] = 0
 
                         Y_update = np.array(obs.loc[ch_names[zee]])
                         Y_update[np.isnan(Y_update)] = 0
-                        weight_update = temp_gamma_obs[k,:]
-                        if np.sum(weight_update>0)<2:
-                            weight_update +=1
+                        weight_update = temp_gamma_obs[k, :]
+                        if np.sum(weight_update > 0) < 2:
+                            weight_update += 1
 
-                        lsim_para.gmm_para_mu.loc[ch_names[zee],(state_names[st],gmm_names[k])] = np.divide(
-                                np.sum(np.multiply(Y_update,weight_update),axis=1), np.sum(weight_update))
+                        lsim_para.gmm_para_mu.loc[ch_names[zee], (state_names[st], gmm_names[k])] = np.divide(
+                            np.sum(np.multiply(Y_update, weight_update), axis=1), np.sum(weight_update))
 
-                        Recentering = np.subtract( Y_update , lsim_para.gmm_para_mu.loc[ch_names[zee], (state_names[st], gmm_names[k])][:,np.newaxis])
-                        lsim_para.gmm_para_sigma.loc[ch_names[zee],(state_names[st],gmm_names[k])] = 0.001*np.nanvar(Recentering,axis=1) + np.diagonal( np.divide(
-                                np.dot(np.multiply(Recentering,weight_update), Recentering.transpose()), np.sum(weight_update)) )
+                        Recentering = np.subtract(Y_update, lsim_para.gmm_para_mu.loc[ch_names[zee], (state_names[st], gmm_names[k])].to_numpy()[:,np.newaxis])
+                        lsim_para.gmm_para_sigma.loc[ch_names[zee], (state_names[st], gmm_names[k])] \
+                            = 0.001 * np.nanvar(Recentering,axis=1) + np.diagonal(np.divide(
+                                np.dot(np.multiply(Recentering, weight_update), Recentering.transpose()), np.sum(weight_update)))
 
-                    lsim_para.gmm_para_P.loc[ch_names[zee], (state_names[st], slice(gmm_names[0],gmm_names[k]))] = np.divide(np.sum(temp_gamma_obs,axis=1), np.sum(temp_gamma_obs))
+                    lsim_para.gmm_para_P.loc[
+                        ch_names[zee], (state_names[st], slice(gmm_names[0], gmm_names[k]))] = np.divide(
+                        np.sum(temp_gamma_obs, axis=1), np.sum(temp_gamma_obs))
 
             lsim_para.pi_steady = np.sum(alpha_T_trials, axis=1) / T_all
             log_likelyhood[itr] = np.sum(P_O_model)
 
-            if extra_options['plot'] and np.remainder(itr,10)==0:
-                k=0
-
-
+            if extra_options['plot'] and np.remainder(itr, 10) == 0:
+                k = 0
 
         transition_matrices = np.array(lsim_para.transition_matrices)
         pi_0 = np.array(lsim_para.pi_0)
         coupling_tetha_IM = np.array(lsim_para.coupling_theta_IM)
-
-
-
 
     def _select_P(self, pi_0):
 
@@ -753,29 +767,31 @@ class lsim():
     def _gmm_gen(self, state, channel):
 
         P = self.parameters.gmm_para_P.loc[channel, state]
-
         P = P.dropna()
 
         if P.__len__() > 1:
 
-            P.index = P.index.droplevel()
+            # P.index = P.index.droplevel()
             current_gmm = self._select_P(P)
 
         else:
             current_gmm = P.index[0]
 
-        mu_temp = self.parameters.gmm_para_mu.loc[channel, (state, current_gmm)]
-        sig_temp = self.parameters.gmm_para_sigma.loc[channel, (state, current_gmm)]
+        mu_temp = self.parameters.gmm_para_mu.loc[channel, (state, current_gmm)].to_numpy()
+        sig_temp = self.parameters.gmm_para_sigma.loc[channel, (state, current_gmm)].to_numpy()
+        # mu_temp = self.parameters.gmm_para_mu[ state, current_gmm].loc[channel]
+        # sig_temp = self.parameters.gmm_para_sigma[ state, current_gmm].loc[channel]
 
         # sig_temp.columns = sig_temp.columns.droplevel()
-        return sig_temp.pow(1 / 2).multiply(np.random.randn(sig_temp.__len__())[:, None]) + mu_temp
+        return np.sqrt(sig_temp) * np.random.randn(sig_temp.__len__()) + mu_temp
 
     def plot_chmm_timeseries(self, obs, channel_number):
 
         pd.options.plotting.backend = "plotly"
 
-        df = pd.DataFrame( obs.loc[self.parameters.channels_name_unique[channel_number - 1]].values.transpose() ,
-                                 columns=self.parameters.dim_names_unique[0:self.parameters.channel_obs_dim[channel_number - 1]], dtype=float)
+        df = pd.DataFrame(obs.loc[self.parameters.channels_name_unique[channel_number - 1]].values.transpose(),
+                          columns=self.parameters.dim_names_unique[
+                                  0:self.parameters.channel_obs_dim[channel_number - 1]], dtype=float)
         df.plot().show()
 
     def chmm_cart_prod(self):
@@ -845,8 +861,3 @@ class lsim():
                                                          states_name_unique[i] for i in row_num]] = bb.copy()
 
         return eq_hmm
-
-
-
-
-
