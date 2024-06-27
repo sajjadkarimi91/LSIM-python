@@ -174,7 +174,7 @@ class general_para(lsim_para):
             for zee in range(lsim_para.C):
                 list(map(str, index_chmm_colomn[zee]))
 
-            index_chmm_colomn_np = np.array(index_chmm_colomn, dtype=np.int)
+            index_chmm_colomn_np = np.array(index_chmm_colomn, dtype=np.int64)
             self.index_chmm_colomn_states = index_chmm_colomn_np
 
             self.transition_matrices = pd.DataFrame([], index=index_chmm_colomn,
@@ -224,7 +224,7 @@ class general_para(lsim_para):
             for zee in range(lsim_para.C):
                 list(map(str, index_chmm_colomn[zee]))
 
-            index_chmm_colomn_np = np.array(index_chmm_colomn, dtype=np.int)
+            index_chmm_colomn_np = np.array(index_chmm_colomn, dtype=np.int64)
             self.index_chmm_colomn_states = index_chmm_colomn_np
 
             self.transition_matrices = pd.DataFrame([], index=index_chmm_colomn,
@@ -583,10 +583,10 @@ class lsim():
         name_of_trails = obs.columns.levels[0]
         length_observation = np.ones(len(name_of_trails), dtype=int)
         for tr in range(num_trials):
-            length_observation[tr] = np.int(obs.loc[:, name_of_trails[tr]].shape[1])
+            length_observation[tr] = np.int64(obs.loc[:, name_of_trails[tr]].shape[1])
 
         all_observation = np.array(obs, dtype=np.float)
-        T_all = np.int(np.sum(length_observation))
+        T_all = np.int64(np.sum(length_observation))
         C = self.parameters.C
         lsim_para = self.parameters
 
@@ -820,7 +820,7 @@ class lsim():
             temp_index = temp_index[:zee]
             index_chmm_colomn.append(np.kron(np.ones((1, int(np.prod(temp_index)))), temp_raw)[0].tolist())
 
-        index_chmm_colomn_np = np.array(index_chmm_colomn, dtype=np.int)
+        index_chmm_colomn_np = np.array(index_chmm_colomn, dtype=np.int64)
 
         for s in range(channel_state_num[0]):
 
