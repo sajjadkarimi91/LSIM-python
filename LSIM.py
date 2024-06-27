@@ -283,8 +283,10 @@ class lsim():
             current_states = dict_states2num.loc[channels_hidden_states.loc[:, t - 1]]
             for c in range(self.parameters.C):
                 current_pi = self.general_chmm_para.pi_0.loc[self.parameters.channels_name_unique[c]]
-                current_pi.loc[:, 0] = self.general_chmm_para.transition_matrices.loc[
-                    tuple(current_states.values), self.parameters.channels_name_unique[c]].values[0]
+                values_to_set  = self.general_chmm_para.transition_matrices.loc[ tuple(current_states.values), self.parameters.channels_name_unique[c]].values[0]
+                values_to_set = values_to_set.astype(np.float64)
+                #values_to_set = np.array(values_to_set, dtype=np.float64)
+                current_pi.loc[:, 0] = values_to_set
                 temp = self._select_P(current_pi)
                 channels_hidden_states.loc[self.parameters.channels_name_unique[c], t] = temp.loc[0]
                 channels_observation.loc[self.parameters.channels_name_unique[c], t] = self._gmm_gen(temp.loc[0],self.parameters.channels_name_unique[c])
@@ -302,10 +304,10 @@ class lsim():
         max_gmm_num = np.max(self.parameters.num_gmm_component)
         dimension_numbers_reshape = np.concatenate([[0], np.cumsum(self.parameters.channel_obs_dim)])
 
-        np_obs = np.array(obs, dtype=np.float)
-        np_mu = np.array(mu_temp, dtype=np.float)
-        np_sig = np.array(sig_temp, dtype=np.float)
-        np_P = np.array(P_temp, dtype=np.float)
+        np_obs = np.array(obs, dtype=np.float64)
+        np_mu = np.array(mu_temp, dtype=np.float64)
+        np_sig = np.array(sig_temp, dtype=np.float64)
+        np_P = np.array(P_temp, dtype=np.float64)
 
         np_mu = np.reshape(np_mu, (dimension_numbers_reshape[-1], max_state_num, max_gmm_num))
         np_sig = np.reshape(np_sig, (dimension_numbers_reshape[-1], max_state_num, max_gmm_num))
@@ -376,7 +378,7 @@ class lsim():
                               np.log(pd_P_observ_cond_to_state.loc[
                                          (channel_names[zee], latent_states.loc[channel_names[zee], t]), t])
 
-        latent_states_num = latent_states.applymap(lambda x: int(x[-3:]))
+        latent_states_num = latent_states.map(lambda x: int(x[-3:]))
         for t in range(1, T):
             for zee in range(self.general_chmm_para.C):
                 temp_index = latent_states_num.loc[:, t].values
@@ -585,7 +587,7 @@ class lsim():
         for tr in range(num_trials):
             length_observation[tr] = np.int64(obs.loc[:, name_of_trails[tr]].shape[1])
 
-        all_observation = np.array(obs, dtype=np.float)
+        all_observation = np.array(obs, dtype=np.float64)
         T_all = np.int64(np.sum(length_observation))
         C = self.parameters.C
         lsim_para = self.parameters
