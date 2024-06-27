@@ -1,14 +1,18 @@
 # https://realpython.com/python-first-steps/
-
+import warnings
 import numpy as np
 import pandas as pd
 from sklearn import mixture
+from sklearn import exceptions as skit_exceptions
 
 
 class lsim_para:
 
     # Initializer / Instance Attributes
     def __init__(self, C_in, channel_state_num_in, channel_obs_dim_in, num_gmm_component_in):
+
+        # Suppress only ConvergenceWarning
+        warnings.filterwarnings("ignore", category=skit_exceptions.ConvergenceWarning)
 
         self.C = C_in
         self.channel_obs_dim = channel_obs_dim_in
