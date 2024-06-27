@@ -1,68 +1,40 @@
-# https://realpython.com/python-first-steps/
-
+from LSIM import lsim
 import numpy as np
 import pandas as pd
 
+# %%
+
 
 C = 3
-channel_obs_dim = [4, 6, 3]
-T = 100
+channel_obs_dim = [4, 1, 3]
+channel_state_num = [3, 4, 5]
+num_gmm_component = [1, 2, 3]
 
-temp_1 = np.random.randn(channel_obs_dim[0], T)
-temp_2 = 1 + np.random.randn(channel_obs_dim[1], T)
-temp_3 = 3 + np.random.randn(channel_obs_dim[2], T)
+T = 100
+from_lsim = False
+
+# %%
+current_lsim = lsim(C, channel_state_num, channel_obs_dim, num_gmm_component)
+current_lsim.reinit_random_para()
 
 #%%
 
-def make_channels_title(C_in, channel_obs_dim_in):
-    channels_name_res = []
-    dimension_of_channels_res = []
-    channels_name_unique_res = []
-    for c in range( C_in):
-        c_ch = c+1
-        channels_name_unique_res.append('channel:' + c_ch.__str__())
-        for d in range(1, channel_obs_dim_in[c]+1):
-            channels_name_res.append('channel:'+c_ch.__str__())
-            dimension_of_channels_res.append(d)
+obs1, latent_states = current_lsim.generate_time_series(from_lsim, T)
+obs1.columns = pd.MultiIndex.from_product([['obs:0001'],np.arange(obs1.columns.shape[0])])
 
-    return channels_name_res, dimension_of_channels_res, channels_name_unique_res
+obs2, latent_states = current_lsim.generate_time_series(from_lsim, T+10)
+obs2.columns = pd.MultiIndex.from_product([['obs:0002'],np.arange(obs2.columns.shape[0])])
 
+obs3, latent_states = current_lsim.generate_time_series(from_lsim, T-15)
+obs3.columns = pd.MultiIndex.from_product([['obs:0003'],np.arange(obs3.columns.shape[0])])
 
-channels_name, dimension_of_channels, channels_name_unique = make_channels_title(C, channel_obs_dim)
+frames = [obs1,obs2,obs3]
+obs = pd.concat(frames,axis=1)
 
-time_series = pd.DataFrame(np.concatenate([temp_1, np.concatenate([temp_2, temp_3])]),
-                           index=[channels_name, dimension_of_channels])
+max_itration = 100
+extra_options = {'plot': True, 'check_convergence': True, 'time_series':True}
+current_lsim.em_lsim(obs, max_itration, extra_options)
 
-print(time_series)
+eq_hmm_test = current_lsim.chmm_cart_prod()
 
-# time_series.loc[channels_name[0]]
-
-for c in range( C):
-    print(time_series.loc[channels_name_unique[c]])
-
-
-aa = time_series.transpose().cov()  # np.dot(time_series, time_series.transpose())
-
-aa_exp = pd.DataFrame(np.exp(aa), index=[channels_name, dimension_of_channels])
-
-aa_hat = np.log(aa_exp)
-# bb_hat = math.log1p(aa_exp) error
-diff_0 = np.subtract(aa, aa_hat)
-
-print(diff_0)
-
-# https://realpython.com/python-first-steps/
-
-number_list = [2,2,3,4]
-mixed_list = ["Hi python",[1,2,3],"Ali"]
-cat_list = number_list + mixed_list
-cat_list.append("new")
-
-
-print(cat_list.pop(2))
-print(cat_list)
-
-my_dict = {5: "ali", "name": "apple"}
-
-print(my_dict["name"])
-
+P_O_model, alpha, beta, alpha_T, b_c_ot_nc, P_observ_cond_to_state, P_observ_cond_to_state_comp = current_lsim.forward_backward_lsim(obs[0])
