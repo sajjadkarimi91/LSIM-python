@@ -33,13 +33,13 @@ obs3.columns = pd.MultiIndex.from_product([['obs:0003'],np.arange(obs3.columns.s
 frames = [obs1,obs2,obs3]
 obs = pd.concat(frames,axis=1)
 
-max_itration = 100
+max_itration = 10
 extra_options = {'plot': True, 'check_convergence': True, 'time_series':True}
 test_lsim.em_lsim(obs, max_itration, extra_options)
 
 eq_hmm_test = test_lsim.chmm_cart_prod()
 
-P_O_model, alpha, beta, alpha_T, b_c_ot_nc, P_observ_cond_to_state, P_observ_cond_to_state_comp = test_lsim.forward_backward_lsim(obs[0])
+P_O_model, alpha, beta, alpha_T, b_c_ot_nc, P_observ_cond_to_state, P_observ_cond_to_state_comp = test_lsim.forward_backward_lsim(obs1)
 
 
 

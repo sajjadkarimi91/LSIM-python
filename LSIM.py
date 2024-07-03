@@ -264,11 +264,9 @@ class lsim():
         from_lsim = True
         self.general_chmm_para = general_para(self.parameters, from_lsim)
 
-        channels_observation = pd.DataFrame([], index=[self.parameters.channels_dim_name,
-                                                       self.parameters.dimension_of_channels],
+        channels_observation = pd.DataFrame([], index=[self.parameters.channels_dim_name, self.parameters.dimension_of_channels],
                                             columns=np.arange(T), dtype=float)
-        channels_hidden_states = pd.DataFrame([], index=self.parameters.channels_name_unique,
-                                              columns=np.arange(T))
+        channels_hidden_states = pd.DataFrame([], index=self.parameters.channels_name_unique, columns=np.arange(T))
 
         for c in range(self.parameters.C):
             pi_0 = self.general_chmm_para.pi_0.loc[self.parameters.channels_name_unique[c]]
@@ -284,7 +282,7 @@ class lsim():
             current_states = dict_states2num.loc[channels_hidden_states.loc[:, t - 1]]
             for c in range(self.parameters.C):
                 current_pi = self.general_chmm_para.pi_0.loc[self.parameters.channels_name_unique[c]]
-                values_to_set  = self.general_chmm_para.transition_matrices.loc[ tuple(current_states.values), self.parameters.channels_name_unique[c]].values[0]
+                values_to_set  = self.general_chmm_para.transition_matrices.loc[tuple(current_states.values), self.parameters.channels_name_unique[c]].values[0]
                 values_to_set = values_to_set.astype(np.float64)
                 #values_to_set = np.array(values_to_set, dtype=np.float64)
                 current_pi.loc[:, 0] = values_to_set
