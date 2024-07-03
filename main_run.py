@@ -10,7 +10,7 @@ channel_obs_dim = [4, 1, 3]
 channel_state_num = [3, 4, 5]
 num_gmm_component = [1, 2, 3]
 
-T = 100
+T = 1000
 from_lsim = False
 
 # %%

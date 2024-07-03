@@ -80,7 +80,7 @@ class lsim_para:
                                                                                    num_gmm_component_in[zee] - 1]))] \
                     = temp.copy()
 
-                temp = np.random.rand(1, num_gmm_component_in[zee]);
+                temp = np.random.rand(1, num_gmm_component_in[zee])
                 temp = temp / np.sum(temp)
                 self.gmm_para_P.loc[self.channels_name_unique[zee], (self.states_name_unique[s],
                                                                      slice(self.gmm_names_unique[0],
@@ -608,7 +608,7 @@ class lsim():
         state_names = lsim_para.states_name_unique
         gmm_names = lsim_para.gmm_names_unique
 
-        C = lsim_para.C
+        # C = lsim_para.C
         flag_EM = True
 
         # GMM initialization
@@ -648,10 +648,8 @@ class lsim():
                     temp_sigma = np.delete(temp_sigma, ind_min, 0)
                     P = np.delete(P, ind_min, 0)
 
-                lsim_para.gmm_para_P.loc[ch_names[zee], state_names[i]] = lsim_para.gmm_para_P.loc[
-                                                                              ch_names[zee], state_names[
-                                                                                  i]].values / np.nansum(
-                lsim_para.gmm_para_P.loc[ch_names[zee], state_names[i]].values)
+                lsim_para.gmm_para_P.loc[ch_names[zee], state_names[i]] = (lsim_para.gmm_para_P.loc[ch_names[zee], state_names[i]].values /
+                                                                           np.nansum(lsim_para.gmm_para_P.loc[ch_names[zee], state_names[i]].values))
                 lsim_para.pi_0.loc[ch_names[zee]] = 1 / lsim_para.channel_state_num[zee]
                 lsim_para.transition_matrices.loc[:, ch_names[zee]] = 1 / lsim_para.channel_state_num[zee]
 
@@ -724,8 +722,7 @@ class lsim():
                 lsim_para.transition_matrices.loc[:, ch_names[zee]] = temp_Trans_zee
 
                 temp_coupling[1:] = np.cumsum(sum32_Zeta_zee)
-                lsim_para.coupling_theta_IM[:, zee] = (temp_coupling[state_numbers_index[1:] + 1] - temp_coupling[
-                    state_numbers_index[:-1] + 1]) / L_T_1
+                lsim_para.coupling_theta_IM[:, zee] = (temp_coupling[state_numbers_index[1:] + 1] - temp_coupling[state_numbers_index[:-1] + 1]) / L_T_1
 
                 for st in range(lsim_para.channel_state_num[zee]):
                     temp_gamma_obs = np.zeros((lsim_para.num_gmm_component[zee], T_all))
@@ -761,9 +758,17 @@ class lsim():
             if extra_options['plot'] and np.remainder(itr, 10) == 0:
                 k = 0
 
-        transition_matrices = np.array(lsim_para.transition_matrices)
-        pi_0 = np.array(lsim_para.pi_0)
-        coupling_tetha_IM = np.array(lsim_para.coupling_theta_IM)
+        if extra_options['plot']:
+            pd.options.plotting.backend = "plotly"
+
+            df_loglik = pd.DataFrame(log_likelyhood, dtype=float)
+            df_loglik.plot().show()
+
+        # transition_matrices = np.array(lsim_para.transition_matrices)
+        # pi_0 = np.array(lsim_para.pi_0)
+        # coupling_tetha_IM = np.array(lsim_para.coupling_theta_IM)
+        self.parameters = lsim_para
+        return lsim_para
 
     def _select_P(self, pi_0):
 
