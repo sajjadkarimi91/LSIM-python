@@ -86,6 +86,9 @@ lsim_init_determinstic.parameters = lsim_params
 
 # generate observation sequences from the model
 obs, latent_states = lsim_init_determinstic.generate_time_series(250) # generate 250 samples
+
+P_star_model, X_star = lsim_init_determinstic.viterbi_lsim(obs)
+
 lsim_init_determinstic.plot_chmm_timeseries(obs, 1)
 lsim_init_determinstic.plot_chmm_timeseries(obs, 2)
 # obs1.columns = pd.MultiIndex.from_product([['obs:0001'],np.arange(obs1.columns.shape[0])])
