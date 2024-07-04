@@ -28,13 +28,13 @@ P_O_model, alpha, beta, alpha_T, b_c_ot_nc, P_observ_cond_to_state, P_observ_con
 
 #%%
 
-obs1, latent_states = current_lsim.generate_time_series(from_lsim, T)
+obs1, latent_states = current_lsim.generate_time_series(T)
 obs1.columns = pd.MultiIndex.from_product([['obs:0001'],np.arange(obs1.columns.shape[0])])
 
-obs2, latent_states = current_lsim.generate_time_series(from_lsim, T+10)
+obs2, latent_states = current_lsim.generate_time_series(T+10)
 obs2.columns = pd.MultiIndex.from_product([['obs:0002'],np.arange(obs2.columns.shape[0])])
 
-obs3, latent_states = current_lsim.generate_time_series(from_lsim, T-15)
+obs3, latent_states = current_lsim.generate_time_series(T-15)
 obs3.columns = pd.MultiIndex.from_product([['obs:0003'],np.arange(obs3.columns.shape[0])])
 
 frames = [obs1,obs2,obs3]
